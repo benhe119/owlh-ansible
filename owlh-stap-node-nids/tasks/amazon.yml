@@ -1,5 +1,11 @@
-- name: Prueba de ping
-  ping:
+- name: Enable EPEL
+  command: yum-config-manager --enable epel
+
+- name: Install epel repo
+  yum:
+    name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    state: present
+
 
 - name: Create SSH key for user owlh
   user:
@@ -8,13 +14,20 @@
     ssh_key_bits: 2048
     ssh_key_file: .ssh/owlh
 
-- name: Software Tap scripts
-  git:
-    repo: 'https://github.com/owlh/flockcontroller.git'
-    dest: /etc/owlh/softwaretap
-    force: yes
+- name: move pub key to ansible manager
+  fetch:
+    src: /home/owlh/.ssh/owlh.pub
+    dest: /tmp/
+    flat: yes
 
-- name: Install package TcpReplay
+- name: Make OwlH user a sudoer
+  lineinfile:
+   path: /etc/sudoers
+   state: present
+   regexp: '^owlh\s'
+   line: 'owlh ALL=(ALL) NOPASSWD: /usr/sbin/tcpdump, /usr/bin/chown'
+
+- name: Install packages
   yum:
     name: "{{ packages }}"
     enablerepo: "epel"
@@ -22,6 +35,14 @@
     packages:
       - tcpreplay
       - python-pip
+      - git
+
+- name: Software Tap scripts
+  git:
+    repo: 'https://github.com/owlh/owlh-softwaretap.git'
+    dest: /etc/owlh/softwaretap
+    force: yes
+
 
 - name: Install paramiko SSH library
   pip:
@@ -29,7 +50,7 @@
     state: latest
 
 - name: configure owlh interface
-  local_action: command sudo bash /etc/owlh/softwaretap/owlh_interface.sh
+  command: bash /etc/owlh/softwaretap/owlh_interface_amazon.sh
 
 - name: OwlH folder structure
   file:
@@ -39,6 +60,7 @@
     group: owlh
     mode: 0644
   with_items:
+    - /etc/owlh/conf
     - /usr/share/owlh/in_queue
     - /usr/share/owlh/in_progress
     - /usr/share/owlh/out_queue
@@ -49,8 +71,10 @@
   copy:
     src: "{{ item.src }}"
     dest: "{{ item.dst }}"
+    owner: owlh
+    group: owlh
     remote_src: yes
-  with_items: 
+  with_items:
     - { src: /etc/owlh/softwaretap/filter.bpf, dst: /etc/owlh/conf/}
     - { src: /etc/owlh/softwaretap/owlh_conf.json, dst: /etc/owlh/conf/}
     - { src: /etc/owlh/softwaretap/inventory.json, dst: /etc/owlh/conf/}
@@ -60,6 +84,18 @@
   copy:
     src: "{{ item }}"
     dest: "/opt/owlh"
+    owner: owlh
+    group: owlh
     remote_src: yes
-  with_fileglob: 
-    - /etc/owlh/softwaretap/*.py
+  with_items:
+    - /etc/owlh/softwaretap/flockanalyzer.py
+    - /etc/owlh/softwaretap/flockconf.py
+    - /etc/owlh/softwaretap/flockcontroller.py
+    - /etc/owlh/softwaretap/flockdefs.py
+    - /etc/owlh/softwaretap/flockinventory.py
+    - /etc/owlh/softwaretap/flockkiller.py
+    - /etc/owlh/softwaretap/flocklogger.py
+    - /etc/owlh/softwaretap/flockmanager.py
+    - /etc/owlh/softwaretap/flockmonitor.py
+    - /etc/owlh/softwaretap/flockssh.py
+

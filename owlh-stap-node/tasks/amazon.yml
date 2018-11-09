@@ -13,7 +13,7 @@
 - name: deploy OwlH master key
   authorized_key:
     user: owlh
-    key: "{{ lookup('file', '/home/owlh/.ssh/owlh.pub') }}"
+    key: "{{ lookup('file', '/tmp/owlh.pub') }}"
     state: present
 
 - name: Make OwlH user a sudoer
@@ -29,15 +29,8 @@
     state: directory
     owner: owlh
     group: owlh
-  with_items: 
+  with_items:
     - /etc/owlh
     - /var/log/owlh
     - /usr/share/owlh/pcap
 
-- name: copy BPF filter 
-  copy:
-    src: /etc/owlh/conf/filter.bpf
-    dest: /etc/owlh/filter.bpf
-    owner: owlh
-    group: owlh
-    mode: 0644
