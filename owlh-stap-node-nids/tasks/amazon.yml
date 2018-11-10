@@ -6,6 +6,15 @@
     name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     state: present
 
+- name: install epel GPG key
+  rpm_key:
+    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+    state: present
+
+- name: install epel GPG key
+  rpm_key:
+    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6
+    state: present
 
 - name: Create SSH key for user owlh
   user:
@@ -31,11 +40,25 @@
   yum:
     name: "{{ packages }}"
     enablerepo: "epel"
+    state: latest
   vars:
     packages:
       - tcpreplay
-      - python-pip
       - git
+
+- name: Install pip amz2
+  yum:
+    name: python-pip
+    enablerepo: "epel"
+    state: latest
+  when: ansible_kernel.find('amzn2') != -1
+
+- name: install pip amz1
+  easy_install:
+    name: pip
+    state: latest
+  become: yes
+  when: ansible_kernel.find('amzn1') != -1
 
 - name: Software Tap scripts
   git:
@@ -43,11 +66,18 @@
     dest: /etc/owlh/softwaretap
     force: yes
 
+- name: Check if paramiko exists
+  command: pip show paramiko
+  register: paramiko_installed
+  become: no
+  ignore_errors: True
 
 - name: Install paramiko SSH library
   pip:
     name: paramiko
     state: latest
+  become: yes
+  when: paramiko_installed.stdout.find('paramiko') == -1
 
 - name: configure owlh interface
   command: bash /etc/owlh/softwaretap/owlh_interface_amazon.sh
