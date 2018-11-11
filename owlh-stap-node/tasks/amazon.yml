@@ -30,7 +30,7 @@
     owner: owlh
     group: owlh
   with_items:
-    - /etc/owlh
+    - /etc/owlh/conf
     - /var/log/owlh
     - /usr/share/owlh/pcap
 
