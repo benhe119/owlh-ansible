@@ -1,3 +1,6 @@
+- hosts: owlh-stap-nodes
+  roles:
+    - owlh-stap-node
 - hosts: owlh-stap-node-nids
   roles:
     - owlh-stap-node-nids
