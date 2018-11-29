@@ -1,6 +1,17 @@
-- hosts: owlh-stap-nodes
-  roles:
-    - owlh-stap-node
+- hosts: local
+  name: Wazuh ansible files 
+  git:
+    repo: 'https://github.com/owlh/owlh-softwaretap.git'
+    dest: /etc/owlh/softwaretap
+    force: yes
+
 - hosts: owlh-stap-node-nids
+  name: deploy owlh software tap master
   roles:
     - owlh-stap-node-nids
+
+- hosts: owlh-stap-nodes
+  name: deploy owlh software tap nodes
+  roles:
+    - owlh-stap-node
+
